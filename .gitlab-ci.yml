@@ -1,0 +1,42 @@
+image: docker:latest  #1
+variables:  #2
+  DOCKER_DRIVER: overlay2
+  #  DOCKER_HOST: tcp://172.17.193.109:2375  # docker host，本地可不写
+  MAVEN_CLI_OPTS: -s /root/config/settings.xml --batch-mode
+  TAG: root/test-springboot:v0.1  # 镜像名称
+cache:  #3
+  paths:
+    - .m2/repository
+services:  #4
+  - docker:dind
+stages:  #5
+  - package
+  - deploy
+  - run
+maven-package:  #6
+  image: f-maven-v1.0:latest
+  tags:
+    - my-tag
+  stage: package
+  script:
+    - mvn  clean package -e -Dmaven.test.skip=true
+  artifacts:
+    paths:
+      - target/*.jar
+build-master:  #7
+  tags:
+    - my-tag
+  stage: deploy
+  script:
+    - docker build -t $TAG .
+  only:
+    - master
+run-master: #8
+  stage: run
+  script:
+    - docker rm -f test || true
+    - docker run -d --name test -p 5000:5000 $TAG
+  only:
+    - master
+  tags:
+    - my-tag
