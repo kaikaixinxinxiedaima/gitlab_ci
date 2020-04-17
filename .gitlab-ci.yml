@@ -39,4 +39,4 @@ run-master: #8
   only:
     - master
   tags:
-    - my-tag
+    - my-tag 
